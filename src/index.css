@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Barlow Condensed", sans-serif;
+  --font-sans: "Outfit", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --color-dromos-orange: #FF6700;
+  --color-dromos-orange-dark: #E05800;
+  --color-dromos-dark: #0A0A0A;
+  --color-dromos-surface: #141414;
+  --color-dromos-surface-elevated: #1C1C1E;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: #0A0A0A;
+    color: #F4F4F5;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.font-athletic {
+  font-family: "Barlow Condensed", sans-serif;
+  font-style: italic;
+  text-transform: uppercase;
+}
+
+/* Custom scrollbar for horizontal day selector and lists */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111111;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272A;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3F3F46;
+}

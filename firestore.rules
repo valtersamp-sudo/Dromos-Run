@@ -1,0 +1,85 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Helper Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation helper for User entity
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'name', 'email', 'createdAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 80
+        && data.email is string && data.email.size() > 3 && data.email.size() <= 120
+        && data.createdAt is string && data.createdAt.size() <= 40
+        && (!('targetDailyCalories' in data) || (data.targetDailyCalories is number && data.targetDailyCalories >= 0 && data.targetDailyCalories <= 20000))
+        && (!('targetDailyDistanceKm' in data) || (data.targetDailyDistanceKm is number && data.targetDailyDistanceKm >= 0 && data.targetDailyDistanceKm <= 200))
+        && (!('targetWeeklyCalories' in data) || (data.targetWeeklyCalories is number && data.targetWeeklyCalories >= 0 && data.targetWeeklyCalories <= 100000))
+        && (!('targetWeeklyDistanceKm' in data) || (data.targetWeeklyDistanceKm is number && data.targetWeeklyDistanceKm >= 0 && data.targetWeeklyDistanceKm <= 1000));
+    }
+
+    // Validation helper for Workout entity
+    function isValidWorkout(data) {
+      return data.keys().hasAll(['id', 'userId', 'type', 'title', 'durationMinutes', 'caloriesBurned', 'performedAt', 'createdAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId.size() <= 128
+        && (data.type in ['outdoor_run', 'treadmill', 'trail_run', 'intervals', 'walking'])
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 100
+        && data.durationMinutes is number && data.durationMinutes > 0 && data.durationMinutes <= 1440
+        && data.caloriesBurned is number && data.caloriesBurned > 0 && data.caloriesBurned <= 15000
+        && (!('distanceKm' in data) || (data.distanceKm is number && data.distanceKm >= 0 && data.distanceKm <= 500))
+        && (!('paceMinPerKm' in data) || (data.paceMinPerKm is number && data.paceMinPerKm >= 0 && data.paceMinPerKm <= 60))
+        && (!('heartRateAvg' in data) || (data.heartRateAvg is number && data.heartRateAvg >= 30 && data.heartRateAvg <= 250))
+        && data.performedAt is string && data.performedAt.size() <= 40
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 500))
+        && data.createdAt is string && data.createdAt.size() <= 40;
+    }
+
+    // User Profile: strictly accessible only by the owner
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if false; // Blanket enumeration strictly disabled
+      allow create: if isSignedIn() && isValidId(userId) && request.auth.uid == userId
+        && isValidUser(incoming()) && incoming().id == userId;
+      allow update: if isSignedIn() && isValidId(userId) && request.auth.uid == userId
+        && isValidUser(incoming()) && incoming().id == existing().id && incoming().createdAt == existing().createdAt;
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+
+      // Workouts Sub-collection: strictly isolated per athlete
+      match /workouts/{workoutId} {
+        allow get, list: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+        allow create: if isSignedIn() && isValidId(userId) && isValidId(workoutId)
+          && request.auth.uid == userId
+          && isValidWorkout(incoming())
+          && incoming().userId == userId;
+        allow update: if isSignedIn() && isValidId(userId) && isValidId(workoutId)
+          && request.auth.uid == userId
+          && isValidWorkout(incoming())
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt;
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(workoutId)
+          && request.auth.uid == userId;
+      }
+    }
+  }
+}

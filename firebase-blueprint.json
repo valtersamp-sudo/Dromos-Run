@@ -1,0 +1,115 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account and athletic targets for Dromos Run",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique user ID matching Firebase Auth UID"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Athlete full name"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Athlete email address"
+        },
+        "targetDailyCalories": {
+          "type": "number",
+          "description": "Target daily calories to burn in kcal"
+        },
+        "targetDailyDistanceKm": {
+          "type": "number",
+          "description": "Target daily distance in kilometers"
+        },
+        "targetWeeklyCalories": {
+          "type": "number",
+          "description": "Target weekly calories in kcal"
+        },
+        "targetWeeklyDistanceKm": {
+          "type": "number",
+          "description": "Target weekly distance in km"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp ISO string"
+        }
+      },
+      "required": ["id", "name", "email", "createdAt"]
+    },
+    "Workout": {
+      "title": "Workout Record",
+      "description": "Individual recorded exercise session (running, treadmill, trail, intervals, walking)",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique workout identifier"
+        },
+        "userId": {
+          "type": "string",
+          "description": "User ID of the athlete who completed the workout"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["outdoor_run", "treadmill", "trail_run", "intervals", "walking"],
+          "description": "Specific exercise category"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Custom or default title of the workout"
+        },
+        "durationMinutes": {
+          "type": "number",
+          "description": "Total workout duration in minutes"
+        },
+        "caloriesBurned": {
+          "type": "number",
+          "description": "Total calories burned in kcal"
+        },
+        "distanceKm": {
+          "type": "number",
+          "description": "Total distance traveled in kilometers"
+        },
+        "paceMinPerKm": {
+          "type": "number",
+          "description": "Calculated average pace in minutes per kilometer"
+        },
+        "heartRateAvg": {
+          "type": "number",
+          "description": "Average heart rate in beats per minute"
+        },
+        "performedAt": {
+          "type": "string",
+          "description": "ISO timestamp when workout was performed"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Personal athlete notes and reflection on the workout"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when record was created"
+        }
+      },
+      "required": ["id", "userId", "type", "title", "durationMinutes", "caloriesBurned", "performedAt", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User athletic profile and daily/weekly goals"
+    },
+    "/users/{userId}/workouts/{workoutId}": {
+      "schema": "Workout",
+      "description": "Logged exercise sessions strictly isolated per athlete"
+    }
+  }
+}
